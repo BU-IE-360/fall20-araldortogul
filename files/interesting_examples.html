@@ -440,14 +440,22 @@ summary {
 <li><p>Fitting an ARIMA model</p></li>
 <li><p>Evaluating and iterating</p></li>
 </ol></li>
-<li><p><a href="https://www.michiganstateuniversityonline.com/resources/supply-chain/why-forecasting-is-essential-in-supply-chain-management/">Supply Chain Management</a></p>
-<p>Supply chain management is the management of the flow of goods and services. Forecasting can be applied in supply chain management to guarantee that the right product is at the right place at the right time. Accurate forecasting will assist retailers lower inventory surplus and thus increase profit margin.</p></li>
-<li><p><a href="https://www.toolshero.com/financial-management/financial-forecasting/">Financial Forecasting</a></p>
-<p>A financial forecast is an assessment of future financial outcomes for a project or company, generally applied in budgeting, capital budgeting and/or valuation. Financial forecasting is important because it helps companies to make the most reasonable financial decision among several alternatives.</p></li>
-<li><p><a href="https://en.wikipedia.org/wiki/Political_forecasting">Political Forecasting</a></p>
-<p>Political forecasting is the operation of predicting the outcome of elections. According to a study, this type of forecasting increases voters’ certainty about an election’s outcome, confuses many, and decreases turnout. Moreover, political forecasting has become dominant in the media, specifically in outlets with liberal audiences, and show that such coverage is likely to affect the candidate who is ahead more strongly.&quot;</p></li>
-<li><p><a href="https://www.omicsonline.org/climatology-and-weather-forecasting-importance.php">Weather Forecasting</a></p>
-<p>Weather forecasting is an application of science, technology, and statistics to foresee the status of the atmosphere for a given location and time. This application of forecasting is of paramount importance because weather conditions affect countless activities such as flights, performance arts, agricultural activities etc. Weather forecasting drastically improves the profit margin and time management of companies, people etc.</p></li>
+<li><p><a href="https://otexts.com/fpp2/regression-intro.html">Forecasting using Linear Regression</a></p>
+<p>This application of forecasting is important because the regression model allows for a linear relationship between the forecast variable <span class="math inline">\(y\)</span> and the predictor variables <span class="math inline">\(x_{1},\cdots,x_{n}\)</span>: <span class="math display">\[y_{t} = \beta_{0} + \beta_{1}x_{1,t} + \cdots + \beta_{n}x_{n,t} + \epsilon_{t}\]</span></p></li>
+<li><p><a href="https://otexts.com/fpp2/expsmooth.html">Forecasting using Exponential Smoothing</a></p>
+<p>Forecasts generated using exponential smoothing methods are weighted averages of previous observations, with the weights decreasing exponentially as the observations get older. That is; the more recent the observation, the higher the associated weight. This method is suitable especially for forecasting data with no seasonal arrangement or clear flow.</p></li>
+<li><p><a href="https://robjhyndman.com/hyndsight/nnetar-prediction-intervals/">Forecasting using Neural Network Autoregression Modeling (NNETAR)</a></p>
+<p>The NNETAR model is a fully connected neural network. The NNETAR model takes in input the last elements of the sequence up to time <span class="math inline">\(t\)</span> and outputs the forecasted value at time <span class="math inline">\(t+1\)</span>. To perform multi-steps forecasts the network is applied iteratively. The model is fitted by using the <code>nnetar()</code> function of the <code>forecast</code> R package.</p></li>
+<li><p><a href="https://blog.tenthplanet.in/time-series-forecasting-tbats/">TBATS Modeling</a></p>
+<p>TBATS is an acronym for key features of the model:</p>
+<ul>
+<li><p>T: Trigonometric seasonality</p></li>
+<li><p>B: Box-Cox transformation</p></li>
+<li><p>A: ARIMA errors</p></li>
+<li><p>T: Trend</p></li>
+<li><p>S: Seasonal components</p></li>
+</ul>
+<p>The main goal of TBATS is to forecast time series with complex seasonal patterns using exponential smoothing. This model is important because it has the capability to deal with complex seasonalities (e.g., non-integer seasonality, non-nested seasonality and large-period seasonality) with no seasonality constraints, making it possible to create detailed, long-term forecasts.</p></li>
 </ol>
 
 
