@@ -1,0 +1,291 @@
+---
+title: "Homework 1: Data Visualization & Google Trends on Three Different Measures from Turkey"
+author: "Aral Dörtoğul"
+date: "11/13/2020"
+output: html_document
+---
+
+In this homework, three different data measures of interest are obtained and their plots are provided to understand the distribution of the data. Then, search keywords are determined for all the data sets that can be relevant to the measures, and their search volume data sets are acquired from Google Trends. Further, it is examined if there is any correlation with the search volumes and the former data.
+
+All the R code written for the following plots is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework1.R) (.R file).\
+The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw1.Rmd) (.Rmd file).
+
+# 1. US Dollar/Turkish Lira Exchange Rates
+
+This topic is interesting because it gives an insight about whether the level of US dollar exchange rate influences the Google search volume of "US dollars" in Turkey.
+
+First, the daily US dollar exchange rate data is taken from [Central Bank of the Republic of Turkey (CBRT)](https://evds2.tcmb.gov.tr) over the years 2013-2020, the first data is the exchange rate of 2 January 2013 and the last data is the rate of 16 November 2020.
+
+The data that is taken with respect to time is as follows:
+```{r Dollar Line Graph, echo=FALSE, fig.align="center", message=FALSE, warning=FALSE}
+library(ggplot2)
+library(lubridate)
+
+yearOrder <-  c('2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020')
+dolar <- read.csv(file = "Data/dailydollar.csv")
+
+dolar[,"Date"] <- as.Date(dolar[,"Date"],format = "%d-%m-%Y")
+dolar$Year <- factor(format(dolar$Date, "%Y"),
+                     levels = yearOrder)
+
+ggp1_1 <- ggplot(data = dolar,aes(x = Date,y = Rate))
+
+ggp1_1 + geom_line(color ="black") +
+  geom_smooth(fill = NA, color="orange",linetype = "twodash", size = 0.5) +
+  labs(title = "USD/TRY Exchange Rates vs. Time",
+       x = "Time",
+       y = "US Dollar Exchange Rate" ) +
+  scale_x_date(date_breaks = "6 month",
+               date_labels = "%Y %b",
+               date_minor_breaks = "1 month") +
+  theme(axis.text.x=element_text(angle=60, hjust=1.4, vjust = 1.4)) +
+  scale_y_continuous(breaks = seq(from = 0,to = 8,by = 1),
+                     minor_breaks = seq(from = 0,to = 9,by = .2))
+```
+
+The first thing that catches the eye is that the US dollar tends to be increasing with a positive acceleration over time.
+
+If the year by year histograms of the exchange rates are plotted:
+```{r Dollar Histograms, echo=FALSE, fig.align="center"}
+ggp1_2 <- ggplot(data = dolar,aes(x = Rate))
+
+ggp1_2 + geom_histogram(bins = 24, alpha = 0.6,aes(color = Year, fill = Year)) +
+  facet_wrap(Year~.,scales = "free_x",ncol = 4) +
+  scale_color_brewer(palette = "Paired") +
+  scale_fill_brewer(palette = "Paired") +
+  labs(title = "Histograms of Daily US Dollar Exchange Rates for Years 2013-2020",
+       x = "US Dollar Exchange Rate (TRY)",
+       y = "Frequency") +
+  theme(legend.position = "none")
+```
+
+The frequency of the rates can be observed in more details with these histograms. It can be said that the rates in 2013 are around 1.8-2.0, and it increases as years pass. The highest rates are in 2020, which is around 7.0. The histogram with the widest x interval is the histogram of 2018, which signifies that USD exchange rate changed the most in that year.
+
+In order to examine the data with a different perspective, the boxplots for each year's exchange rates is plotted:
+```{r Dollar Boxplots, echo=FALSE, fig.align="center"}
+ggp1_3 <- ggplot(data = dolar,aes(x = Year,y = Rate))
+
+ggp1_3 + geom_boxplot(aes(y = Rate, fill=Year)) +
+  scale_fill_brewer(palette="Paired") +
+  labs(title = "Boxplots of Daily US Dollar Exchange Rates for Years 2013-2020",
+       x = "Years",
+       y = "US Dollar Exchange Rate (TRY)") +
+  scale_y_continuous(breaks = seq(from = 0,to = 8,by = 1),
+                     minor_breaks = seq(from = 0,to = 9,by = .2))
+```
+
+With the boxplot, the story behind the data can be seen more clearly. There is a smooth increase of the rates between the years. The boxplot of 2018 is the widest, meaning that the exchange rate data of 2018's standard deviation is more than the other years.
+
+For Google Trends, the search keyword “ABD Doları” (US Dollar) is chosen, because it is a widely used keyword when people search for the US dollar exchange rates online.
+
+The boxplots for the search volumes of "ABD Doları" (US Dollar) in Turkey for each year can be seen below:\
+(The data of Google Trends is monthly.)
+```{r Dollar Google Trends, message=FALSE, warning=FALSE, echo=FALSE, fig.align="center"}
+dolargt <- read.csv(file = "Data/dollargt.csv")
+
+dolargt$Month <- as.Date(parse_date_time(dolargt$Month,"Ym"),format = "%Y-%m-%d")
+dolargt$Year <- factor(format(dolargt$Month, "%Y"), levels = yearOrder)
+
+ggp1_4 <- ggplot(data = dolargt,aes(x = Year,y = ABD.Dolari))
+ggp1_4 + geom_boxplot(aes(fill=Year)) +
+  labs(title = "Boxplots of Google Trends Search Volume ",
+       subtitle = "for the Keyword: \"ABD Doları\" in Turkey for Years 2013-2020",
+       x = "Years",
+       y = "Volume (%)") +
+  scale_y_continuous(breaks = seq(from = 0,to = 100,by = 5),
+                     minor_breaks = seq(from = 0,to = 100,by = 2.5)) +
+  lims(y = c(0,45)) +
+  scale_fill_brewer(palette="Paired")
+```
+
+After comparing the boxplot of the exchange rates and the Google Trends search volumes, the correlation between them can be seen apparently. Needless to say, the search volumes can be affected by not only the level of dollar exchange rates, but also how fast it changes with respect to time, and many other factors. However, that is a whole another topic to discuss.
+
+It can be concluded from just our Google Trends and CBRT that as the rates increase, the volumes tend to increase, too. The Google Trends data for 2018 is also the data with the most deviation (the widest boxlot), similar to the exchange rate data. Although 2020's search volumes do not seem to reflect the real exchange rate values, the search volumes of "ABD doları" (US dollar) highly correlate with the exchange rate levels. People in Turkey tend to search for USD/TRY exchange rates more when the rate levels are high.
+
+# 2. Interest Rates of Bank Loans
+
+Occasionally, people apply for various bank loans because of urgent need of money. But before actually applying, people usually consider how much interest they are going to pay on the loan, and that depends on the interest rates banks set. This brought a question to my mind:\
+Do the interest rate levels of bank loans have any effect on the search volumes of interest rates or loans?
+
+In order to find an answer, first the weekly data of the interest rate levels of four different types of loans (consumer loan, vehicle loan, housing loan, and commercial loan) is received from [Central Bank of the Republic of Turkey (CBRT)](https://evds2.tcmb.gov.tr) over years 2013-2020:
+
+The data that is collected with respect to time is as follows:
+```{r Interest Rates Line Graph, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+intdata <- read.csv(file = "Data/interest.csv")
+
+intdata$Date <- as.Date(intdata$Date,format = "%d-%m-%Y")
+intdata$Year <- factor(format(intdata$Date, "%Y"),
+                        levels = yearOrder)
+interest <- data.frame(
+  "Loan" = c(intdata$Ihtiyac,intdata$Tasit,intdata$Konut,intdata$Ticari),
+  "Date" = rep(x = intdata$Date,times = 4),
+  "Year" = rep(x = intdata$Year,times = 4),
+  "Type" = c(rep("Consumer Loan",nrow(intdata)),
+             rep("Vehicle Loan",nrow(intdata)),
+             rep("Housing Loan",nrow(intdata)),
+             rep("Commerical Loan",nrow(intdata))))
+
+colors <- c("darkred","darkolivegreen","orange","mediumpurple")
+ggp2_1 <- ggplot(data = interest, aes(x = Date))
+
+ggp2_1 +
+  geom_line(aes(y = Loan,color = Type), alpha = .8) +
+  scale_x_date(date_breaks = "6 month",
+               date_labels = "%Y %b",
+               date_minor_breaks = "1 month") +
+  theme(axis.text.x=element_text(angle=60, hjust=1.4, vjust = 1.4)) +
+  scale_y_continuous(breaks = seq(from = 0,to = 40,by = 4),
+                     minor_breaks = seq(from = 0,to = 40,by = 1)) +
+  labs(title = "Interest Rates of Different Types of Bank Loans vs. Time",
+       color = "Loan Types",
+       x = "Time",
+       y = "Interest Rate (%)") +
+  scale_color_manual(values = colors)
+```
+
+The line graph shows that all the interest rates of different loans skyrocket in 2018 and then plummet in late 2019. The major spike in the graph might reveal the relation when compared to the Google Trends data.
+
+The stacked histograms of the interest rate levels for each year is below:
+```{r Interest Rates Histograms, echo=FALSE, fig.align="center"}
+ggp2_2 <- ggplot(data = interest)
+
+ggp2_2 +
+  geom_histogram(aes(x = Loan, fill = Type),color = "black",bins = 24,alpha = .8,size = .25) +
+  facet_wrap(Year~.,scales = "free_x",nrow = 2) +
+  labs(title = "Stacked Histograms of the Interest Rates of Different Bank Loans for years 2013-2020",
+       fill = "Loan Types",
+       x = "Interest Rate (%)",
+       y = "Frequency") +
+  scale_fill_manual(values = colors) +
+  scale_y_continuous(breaks = seq(from = 0,to = 35,by = 5),
+                     minor_breaks = seq(from = 0,to = 35,by = 1))
+```
+
+The stacked histograms show the overall frequency of the interest rate levels of each year irrespective of the loan types, nevertheless the loan types are colored in order to gain an insight on the frequency of each different loan type. Interest rate distribution is the widest in 2018 and 2019.
+
+```{r Interest Rate Boxplots, echo=FALSE, fig.align="center"}
+ggp2_3 <- ggplot(data = interest,aes(x = Year,y = Loan))
+
+ggp2_3 + geom_boxplot(aes(fill=Type)) +
+  labs(title = "Boxplots of Interest Rates for Years 2013-2020",
+       x = "Years",
+       y = "US Dollar Exchange Rate (TRY)",
+       fill = "Loan Types") + 
+  scale_fill_manual(values = colors) + 
+  scale_y_continuous(breaks = seq(from = 0,to = 40,by = 2),
+                     minor_breaks = seq(from = 0,to = 40,by = .5))
+```
+
+The boxplots of the interest rates support the claim that the interest rate distribution is the widest and also the highest in 2018-2019.
+
+For the Google Trends, 4 keywords are selected: "faiz" (interest), "ihtiyaç kredisi" (consumer loan), "konut kredisi" (housing loan), and "taşıt kredisi" (vehicle loan).\
+The boxplot of the monthly data of search volumes for these keywords is as follows:
+```{r Interest Rates Google Trends, message=FALSE, warning=FALSE, echo=FALSE, fig.align="center"}
+intgt <- read.csv(file = "Data/interestgt.csv")
+
+intgt$Month <- as.Date(parse_date_time(intgt$Month,"Ym"),format = "%Y-%m-%d")
+intgt$Year <- factor(format(intgt$Month, "%Y"), levels = yearOrder)
+
+interestgt <- data.frame(
+  "Loan" = c(intgt$Consumer,intgt$Vehicle,intgt$Housing,intgt$Interest),
+  "Date" = rep(x = intgt$Month,times = 4),
+  "Year" = rep(x = intgt$Year,times = 4),
+  "Type" = c(rep("İhtiyaç Kredisi",nrow(intgt)),
+             rep("Taşıt Kredisi",nrow(intgt)),
+             rep("Konut Kredisi",nrow(intgt)),
+             rep("Faiz",nrow(intgt))))
+
+ggp2_4 <- ggplot(data = interestgt,aes(x = Year,y = Loan))
+ggp2_4 + geom_boxplot(aes(fill=Type)) +
+  labs(title = "Boxplots of Google Trends Search Volume for the Keywords: ",
+       subtitle = "\"Faiz\", \"İhtiyaç Kredisi\", \"Taşıt Kredisi\", \"Konut Kredisi\" in Turkey for Years 2013-2020",
+       x = "Years",
+       y = "Volume (%)",
+       fill = "Keywords") +
+  scale_y_continuous(breaks = seq(from = 0,to = 100,by = 10),
+                     minor_breaks = seq(from = 0,to = 100,by = 2)) +
+  scale_fill_manual(values=c("skyblue","darkolivegreen","orange","mediumpurple"))
+```
+
+It can be inferred that the search volumes of the  keywords "ihtiyaç kredisi" (consumer loan), "konut kredisi" (housing loan), and "taşıt kredisi" (vehicle loan) are not that correlated with their interest rate levels. Because although they rised a bit in 2018, their rise do not satisfy the expectations when compared to the major spike in the interest rate graph. The search volume of "ihtiyaç kredisi" (consumer loan) is the highest at 2020, which is most likely because of the COVID-19 pandemics impact on the overall economy.
+
+On the other hand, the search volume of the keyword "faiz" (interest) increased when the interest rates increased and also fell when they fell. The sudden rise of the interest rates is probably the reason of the increase of the search volumes of the keyword "faiz" in the corresponding years.
+
+# 3. Unemployment Rate
+
+Unemployment rate is a dynamic data in Turkey, it changes constantly. The monthly data of the unemployment rate of Turkey from Jan 2013 to Aug 2020 is obtained from [Central Bank of the Republic of Turkey (CBRT)](https://evds2.tcmb.gov.tr):
+```{r Unemployment Rate Line Graph, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
+unemployment <- read.csv(file = "Data/unemployment.csv")
+
+unemployment[,"Date"] <- as.Date(parse_date_time(unemployment$Date,"Ym"),format = "%Y-%m-%d")
+unemployment$Year <- factor(format(unemployment$Date, "%Y"),
+                     levels = yearOrder)
+
+ggp3_1 <- ggplot(data = unemployment,aes(x = Date,y = Rate))
+
+ggp3_1 + geom_line(color ="black") +
+  geom_smooth(fill = NA, color="orange",linetype = "dashed", size = 0.5) +
+  labs(title = "Unemployment Rate vs. Time",
+       x = "Time",
+       y = "Unemployment Rate (%)" ) +
+  scale_x_date(date_breaks = "6 month",
+               date_labels = "%Y %b",
+               date_minor_breaks = "1 month") +
+  theme(axis.text.x=element_text(angle=60, hjust=1.4, vjust = 1.4)) +
+  scale_y_continuous(breaks = seq(from = 8,to = 15,by = 1),
+                     minor_breaks = seq(from = 8,to = 15,by = .2))
+```
+
+The data is made of periodic waves with an overall increase in the level year by year. The reason of this cyclical pattern is due to the seasonal workers such as holiday resort workers in summer, agricultural workers etc.
+
+The histograms of the unemployment rates for each year:
+```{r Unemployment Rate Histograms, echo=FALSE, fig.align="center"}
+ggp3_2 <- ggplot(data = unemployment,aes(x = Rate))
+
+ggp3_2 + geom_histogram(bins = 8, alpha = 0.7,aes(color = Year, fill = Year)) +
+  facet_wrap(Year~.,scales = "free_x",ncol = 4) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  labs(title = "Histograms of Unemployment Rate for Years 2013-2020",
+       x = "Unemployment Rate (%)",
+       y = "Frequency") +
+  theme(legend.position = "none")
+```
+
+The unemployment rates seem to rise slowly each year, until 2019. Then in 2020, the rates drop a bit. Since the data is monthly, there are only 12 data points for each year except 2020, which has only 8 data points. Because of the scarcity of the data, the histogram is not the most efficient way of visualizing the data.
+
+Below is the boxplots of the unemployment rates for each year:
+```{r Unemployment Rate Boxplots, echo=FALSE, fig.align="center"}
+ggp3_3 <- ggplot(data = unemployment,aes(x = Year,y = Rate))
+
+ggp3_3 + geom_boxplot(aes(y = Rate, fill=Year)) +
+  scale_fill_brewer(palette="Dark2") +
+  labs(title = "Boxplots of Unemployment Rates for Years 2013-2020",
+       x = "Years",
+       y = "Unemployment Rate (%)") +
+  scale_y_continuous(breaks = seq(from = 8,to = 15,by = 1),
+                     minor_breaks = seq(from = 8,to = 15,by = .2))
+```
+
+The boxplots help us visualize the data better. The unemployment rates tend to increase slowly from 2013 to 2018 and then shoot up at 2019. Then, it falls a little at 2020.
+
+The keyword "iş ilanı" (job advertisement) is chosen for Google Trends, becuase people search for a job when they are unemployed.\
+The boxplot of the monthly search volume data for each year is the following:
+```{r Unemployment Rate Google Trends, echo=FALSE, fig.align="center", message=FALSE, warning=FALSE}
+unempgt <- read.csv(file = "Data/unemploymentgt.csv")
+
+unempgt$Month <- as.Date(parse_date_time(unempgt$Month,"Ym"),format = "%Y-%m-%d")
+unempgt$Year <- factor(format(unempgt$Month, "%Y"), levels = yearOrder)
+
+ggp3_4 <- ggplot(data = unempgt,aes(x = Year,y = Isilani))
+ggp3_4 + geom_boxplot(aes(fill=Year)) +
+  labs(title = "Boxplots of Google Trends Search Volume ",
+       subtitle = "for the Keyword: \"iş ilanı\" in Turkey for Years 2013-2020",
+       x = "Years",
+       y = "Volume (%)") +
+  scale_y_continuous(breaks = seq(from = 0,to = 100,by = 5),
+                     minor_breaks = seq(from = 0,to = 100,by = 2.5)) +
+  scale_fill_brewer(palette="Dark2")
+```
+
+The boxplot of the search volume of "iş ilanı" is almost the same with the boxplot of the unemployment rates from 2013-2019. the search volumes deviates very much in 2020, maybe because of the COVID-19 pandemic. To conclude, people's search for job advertisements and the unemployment rates extremely correlate with each other. The higher the unemployment rate, the higher the search volumes of job advertisements.
