@@ -8,7 +8,9 @@ output: html_document
 In this homework, three different data measures of interest are obtained and their plots are provided to understand the distribution of the data. Then, search keywords are determined for all the data sets that can be relevant to the measures, and their search volume data sets are acquired from Google Trends. Further, it is examined if there is any correlation with the search volumes and the former data.
 
 All the R code written for the following plots is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework1.R) (.R file).\
-The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw1.Rmd) (.Rmd file).
+The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw1.Rmd) (.Rmd file).\
+The collection of the data sets that are worked on (.csv files) is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/hw1data.zip) (.zip file).\
+(In order to run the R code without any problems, the data should be in the same directory with the code.)
 
 # 1. US Dollar/Turkish Lira Exchange Rates
 
@@ -22,7 +24,7 @@ library(ggplot2)
 library(lubridate)
 
 yearOrder <-  c('2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020')
-dolar <- read.csv(file = "Data/dailydollar.csv")
+dolar <- read.csv(file = "dailydollar.csv")
 
 dolar[,"Date"] <- as.Date(dolar[,"Date"],format = "%d-%m-%Y")
 dolar$Year <- factor(format(dolar$Date, "%Y"),
@@ -81,7 +83,7 @@ For Google Trends, the search keyword “ABD Doları” (US Dollar) is chosen, b
 The boxplots for the search volumes of "ABD Doları" (US Dollar) in Turkey for each year can be seen below:\
 (The data of Google Trends is monthly.)
 ```{r Dollar Google Trends, message=FALSE, warning=FALSE, echo=FALSE, fig.align="center"}
-dolargt <- read.csv(file = "Data/dollargt.csv")
+dolargt <- read.csv(file = "dollargt.csv")
 
 dolargt$Month <- as.Date(parse_date_time(dolargt$Month,"Ym"),format = "%Y-%m-%d")
 dolargt$Year <- factor(format(dolargt$Month, "%Y"), levels = yearOrder)
@@ -111,7 +113,7 @@ In order to find an answer, first the weekly data of the interest rate levels of
 
 The data that is collected with respect to time is as follows:
 ```{r Interest Rates Line Graph, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
-intdata <- read.csv(file = "Data/interest.csv")
+intdata <- read.csv(file = "interest.csv")
 
 intdata$Date <- as.Date(intdata$Date,format = "%d-%m-%Y")
 intdata$Year <- factor(format(intdata$Date, "%Y"),
@@ -181,7 +183,7 @@ The boxplots of the interest rates support the claim that the interest rate dist
 For the Google Trends, 4 keywords are selected: "faiz" (interest), "ihtiyaç kredisi" (consumer loan), "konut kredisi" (housing loan), and "taşıt kredisi" (vehicle loan).\
 The boxplot of the monthly data of search volumes for these keywords is as follows:
 ```{r Interest Rates Google Trends, message=FALSE, warning=FALSE, echo=FALSE, fig.align="center"}
-intgt <- read.csv(file = "Data/interestgt.csv")
+intgt <- read.csv(file = "interestgt.csv")
 
 intgt$Month <- as.Date(parse_date_time(intgt$Month,"Ym"),format = "%Y-%m-%d")
 intgt$Year <- factor(format(intgt$Month, "%Y"), levels = yearOrder)
@@ -215,7 +217,7 @@ On the other hand, the search volume of the keyword "faiz" (interest) increased 
 
 Unemployment rate is a dynamic data in Turkey, it changes constantly. The monthly data of the unemployment rate of Turkey from Jan 2013 to Aug 2020 is obtained from [Central Bank of the Republic of Turkey (CBRT)](https://evds2.tcmb.gov.tr):
 ```{r Unemployment Rate Line Graph, echo=FALSE, message=FALSE, warning=FALSE, fig.align="center"}
-unemployment <- read.csv(file = "Data/unemployment.csv")
+unemployment <- read.csv(file = "unemployment.csv")
 
 unemployment[,"Date"] <- as.Date(parse_date_time(unemployment$Date,"Ym"),format = "%Y-%m-%d")
 unemployment$Year <- factor(format(unemployment$Date, "%Y"),
@@ -272,7 +274,7 @@ The boxplots help us visualize the data better. The unemployment rates tend to i
 The keyword "iş ilanı" (job advertisement) is chosen for Google Trends, becuase people search for a job when they are unemployed.\
 The boxplot of the monthly search volume data for each year is the following:
 ```{r Unemployment Rate Google Trends, echo=FALSE, fig.align="center", message=FALSE, warning=FALSE}
-unempgt <- read.csv(file = "Data/unemploymentgt.csv")
+unempgt <- read.csv(file = "unemploymentgt.csv")
 
 unempgt$Month <- as.Date(parse_date_time(unempgt$Month,"Ym"),format = "%Y-%m-%d")
 unempgt$Year <- factor(format(unempgt$Month, "%Y"), levels = yearOrder)
