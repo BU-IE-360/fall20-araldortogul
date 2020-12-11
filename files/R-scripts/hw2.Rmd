@@ -11,7 +11,7 @@ In this homework, three different data measures of interest are obtained and the
 
 All the R code written for the following plots is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework2.R) (.R file).\
 The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw2.Rmd) (.Rmd file).\
-The data obtained from the CBRT Electronic Delivery System is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/hw2data.csv) (.csv file).
+The data obtained from the CBRT Electronic Delivery System is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/hw2data.csv) (.csv file).\
 (In order to run the R code without any problems, the data should be in the same directory with the code.)
 
 # Introduction
@@ -186,7 +186,7 @@ The summary of the correlation tests:
 ggcorrplot(corr = cor(data_ts),
            hc.order = TRUE,
            outline.col = "white",
-           type = "upper",lab = TRUE,
+           type = "upper", lab = TRUE,
            title = "Correlation Matrix",
            colors = c("darkred","white","darkgreen"),
            legend.title = "Correlation",

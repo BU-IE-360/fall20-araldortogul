@@ -542,7 +542,8 @@ summary {
 <p>In this homework, three different data measures of interest are obtained and their plots &amp; correlation analyses are provided to understand the relationship between them. Further, it is examined if a model can be fitted to one of the datasets using the others.</p>
 <p>All the R code written for the following plots is <a href="https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework2.R">here</a> (.R file).<br />
 The R markdown written for this html document including the code chunks is <a href="https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw2.Rmd">here</a> (.Rmd file).<br />
-The data obtained from the CBRT Electronic Delivery System is <a href="https://bu-ie-360.github.io/fall20-araldortogul/files/hw2data.csv">here</a> (.csv file). (In order to run the R code without any problems, the data should be in the same directory with the code.)</p>
+The data obtained from the CBRT Electronic Delivery System is <a href="https://bu-ie-360.github.io/fall20-araldortogul/files/hw2data.csv">here</a> (.csv file).<br />
+(In order to run the R code without any problems, the data should be in the same directory with the code.)</p>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p>In the Principles of Economics (EC 101/102) courses, it was stated that the society faces a short-run trade-off between <em>inflation</em> and <em>unemployment</em>. This is explained in three steps:</p>
@@ -705,7 +706,7 @@ ggplot(data = data_stacked,mapping = aes(x = Year,y = values)) +
 <pre class="r"><code>ggcorrplot(corr = cor(data_ts),
            hc.order = TRUE,
            outline.col = &quot;white&quot;,
-           type = &quot;upper&quot;,lab = TRUE,
+           type = &quot;upper&quot;, lab = TRUE,
            title = &quot;Correlation Matrix&quot;,
            colors = c(&quot;darkred&quot;,&quot;white&quot;,&quot;darkgreen&quot;),
            legend.title = &quot;Correlation&quot;,
