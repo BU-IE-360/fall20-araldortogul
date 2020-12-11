@@ -291,3 +291,4 @@ ggp3_4 + geom_boxplot(aes(fill=Year)) +
 ```
 
 The boxplot of the search volume of "iş ilanı" is almost the same with the boxplot of the unemployment rates from 2013-2019. the search volumes deviates very much in 2020, maybe because of the COVID-19 pandemic. To conclude, people's search for job advertisements and the unemployment rates extremely correlate with each other. The higher the unemployment rate, the higher the search volumes of job advertisements.
+

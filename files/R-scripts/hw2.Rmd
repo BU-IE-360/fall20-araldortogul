@@ -1,0 +1,252 @@
+---
+title: "Homework 2"
+author: "Aral Dörtoğul"
+date: "11/12/2020"
+output:
+  html_document:
+    code_folding: hide
+    theme: yeti
+---
+In this homework, three different data measures of interest are obtained and their plots & correlation analyses are provided to understand the relationship between them. Further, it is examined if a model can be fitted to one of the datasets using the others.
+
+All the R code written for the following plots is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework2.R) (.R file).\
+The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw2.Rmd) (.Rmd file).\
+The data obtained from the CBRT Electronic Delivery System is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/) (.csv file).
+# Introduction
+
+In the Principles of Economics (EC 101/102) courses, it was stated that the society faces a short-run trade-off between _inflation_ and _unemployment_. This is explained in three steps:
+
+* Increasing the amount of money in the economy stimulates the overall level of spending and thus the demand for goods and services.
+
+* Higher demand may over time cause firms to raise their prices, but in the meantime, it also encourages them to hire more workers and produce a larger quantity of goods and services.
+
+* More hiring means lower unemployment.
+
+Similar to inflation, changes in _interest rates_ have an effect on _exchange rates_ in general. Increases in interest rates cause a country's currency to appreciate because higher interest rates provide higher rates to lenders, thereby attracting more foreign capital, which causes a rise in exchange rates.\
+Interest rates and exchange rates have an indirect impact on inflation due their impact on the _consumer price index (CPI)_. This brought a question to my mind: Can they also affect unemployment by any means?
+
+So, my research question is:\
+**Is the unemployment rate in Turkey correlated with the USD/TRY exchange rates and the interest rate set by banks for personal deposit accounts (TRY) in any way?**
+
+This is indeed an interesting question and needs further examination.
+
+# Manipulation & Visualisation of Data
+
+For the sake of finding an answer to this question, the first thing that is done is the retrieval of the data sets. The monthly data of unemployment rates, interest rates for deposit accounts (TRY) and the USD/TRY exchange rates from January 2013 to August 2020 are obtained from the Central Bank of the Republic of Turkey's [Electronic Data Delivery System](https://evds2.tcmb.gov.tr).
+
+The data is difficult to visualize without the proper adjustments. In order to make it easier to analyze, data manipulation is needed (especially for time):
+
+
+```{r Data Manipulation, message=FALSE, warning=FALSE}
+library(ggplot2)    # for plotting histograms and boxplots
+library(ggfortify)  # for plotting ts objects with ggplot
+library(forecast)   # forecasting library
+library(xts)        # extended time series library
+library(ggcorrplot) # for plotting the correlation matrix
+
+data <- read.csv("hw2data.csv")
+# Converts the type of "Date" column from char to yearmon (date-time format)
+data$Date <- as.yearmon(x = data$Date)
+
+# Creates a time series object from the obtained data -Date column omitted-
+data_ts <- xts(x = data[-1],order.by = data$Date,frequency = 12)
+
+# Column names are changed for better readability.
+colnames(data_ts) <- c("Exchange", "Interest", "Unemployment")
+```
+
+The data is transformed into an `xts` object (`xts` package). `xts` stands for "extended time series". The data now looks something like this:
+```{r Head of Data}
+head(data_ts)
+```
+
+Thanks to these minor adjustments, the data can be handled in R much more easily.
+
+The time series data with respect to time is as follows:
+
+```{r Line Graph, fig.align="center", fig.width=10, message=FALSE, warning=FALSE}
+colors = c("darkred","darkolivegreen","navyblue")
+colnames <- colnames(data_ts)
+ratenames <- c("USD Exchange Rate (TRY)", "Interest Rate (%)", "Unemployment Rate (%)")
+
+colnames(data_ts) <- ratenames
+plot(x = data_ts,ylab = "Rate (TRY/%)", main = "Unemployment, Interest & USD Exchange Rates vs. Time",
+     col = colors, lwd = c(2,2,3),legend.loc = "topleft", minor.ticks = "months",
+     grid.ticks.on = "quarter", grid.ticks.lty = "dotted")
+colnames(data_ts) <- colnames
+```
+
+All three different types of rates have an overall increasing trend between 2013 and 2020. The unemployment rate seems to have a cyclical pattern, it increases in winters and decreases in summers. This may be because of the seasonal workers who are employed only in holiday seasons, reaping times etc. because of this seasonality, the month of the year is an important factor that should be taken into account when predicting unemployment rates.
+
+Also, we can clearly observe that the unemployment has increased slowly in Turkey from 2013 to 2020. This trend may have several reasons, but for now the hypothesis is that the main reason of this trend is the rising exchange rates and we will check if this hypothesis is true.
+
+Another thing that can be noticed is that between late 2018 and 2019, all the data (especially interest rates) skyrocketed and then fell again. The economic instability in unemployment rate for 2018-2019 may be explained by the change in interest rates in the corresponding years.
+
+Unemployment rate has a different dynamic than the other two types of rates. However, if we omit the seasonality of unemployment, the series somewhat resemble each other.
+
+The histograms of the data sets for each year:
+
+```{r Unemployment Rate Histograms, fig.align="center", fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
+data$Year <- factor(format(x = data$Date, format = "%Y"), ordered = TRUE)
+ggplot(data = data,aes(x = Unemp)) +
+  geom_histogram(bins = 14, alpha = 0.6,aes(color = Year, fill = Year)) +
+  facet_wrap(facets = .~Year,scales = "free_x",ncol = 4) +
+  scale_color_brewer(palette = "Paired",aesthetics = c("color", "fill")) +
+  labs(title = "Histograms of Monthly Unemployment Rates",
+       x = "Unemployment Rate (%)",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+```{r Exchange Rate Histograms, fig.align="center", fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(data = data,aes(x = Deposit)) +
+  geom_histogram(bins = 14, alpha = 0.6,aes(color = Year, fill = Year)) +
+  facet_wrap(facets = .~Year,scales = "free_x",ncol = 4) +
+  scale_color_brewer(palette = "Paired",aesthetics = c("color", "fill")) +
+  labs(title = "Histograms of Monthly Interest Rates for Deposit Accounts (TRY)",
+       x = "Interest Rate (%)",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+```{r Interest Rate Histograms, fig.align="center", fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(data = data,aes(x = Dollar)) +
+  geom_histogram(bins = 14, alpha = 0.6,aes(color = Year, fill = Year)) +
+  facet_wrap(facets = .~Year,scales = "free_x",ncol = 4) +
+  scale_color_brewer(palette = "Paired",aesthetics = c("color", "fill")) +
+  labs(title = "Histograms of Monthly USD Exchange Rates",
+       x = "USD Exchange Rate (TRY)",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+The histograms help us visualize the data a bit. It can be perceived that all three different data types tend to be increasing. Interest rates are the most scattered type of data. Also, in 2018 and 2019 all the rates deviated more than their usual deviation, which implies that something unnatural might have occurred in those years. Since each year has at most 12 data, histograms are not the most efficient way of visualizing the data.
+
+If we plot the boxplots of the rates for each year:
+
+```{r Boxplots, fig.align="center", fig.height=8, fig.width=10, message=FALSE, warning=FALSE}
+data = data[,1:4]
+data_stacked <- cbind("Date" = as.yearmon(rep(data$Date,3)), stack(data))
+
+years <- factor(format(data$Date, format = "%Y"),ordered = TRUE)
+data_stacked$Year <- rep(years,3)
+
+ggplot(data = data_stacked,mapping = aes(x = Year,y = values)) +
+  geom_boxplot(mapping = aes(fill = ind)) +
+  scale_fill_manual(values = colors, labels = ratenames) +
+  labs(title = "Boxplots of Unemployment, Interest & USD Exchange Rates for Each Year",
+       x = "Years", "Rate (TRY/%)",
+       y = "Rate (TRY/%)",
+       fill = "Rate Type") +
+  scale_y_continuous(minor_breaks = seq(0,25,by = 1))
+```
+
+The boxplots support the claim that both unemployment, interest and exchange rates have an increasing trend between the scope of the data. The boxplots of the USD exchange rates and the unemployment rates almost have the same slope and the size, which backs the hypothesis that these two data sets are correlated with each other. For the interest rates, it can be said that the rates show a similar pattern until 2018 and after that year they drift off course by increasing way too much in 2018.
+
+# Correlation Tests
+
+Correlation in statistics is a bivariate analysis that measures the strength of association between two variables and the direction of the relationship.  In terms of the strength of relationship, the value of the correlation coefficient changes between +1 and -1.  A value of ± 1 points out an excellent degree of association between the two variables.  As the correlation coefficient value approaches 0, the relationship between the two variables will be poorer.  The direction of the relationship is indicated by the sign of the coefficient; a plus (+) sign indicates a positive relationship and a minus (–) sign indicates a negative relationship.
+
+**Pearson _r_ correlation** is the most widely used correlation statistic to measure the degree of the relationship between linearly related variables. The following formula is used to calculate the Pearson r correlation coefficient:
+
+$$r = \frac{\sum_{i=1}^{n} {\left (x-m_x \right) \left (y-m_y \right)}} {\sqrt {\sum_{i=1}^{n} {\left (x-m_x \right)^2}\sum_{i=1}^{n} {\left (y-m_y \right)^2}}}$$
+where
+
+* $x$ and $y$ are two vectors of length $n$
+* $m_x$ and $m_y$ corresponds to the means of $x$ and $y$, respectively.
+
+With this,  a hypothesis testing can be conducted on the correlation of the pairs of data of unemployment, interest and exchange rates. The null hypothesis is that the correlation coefficient is 0 and the alternative hypothesis is that the correlation coefficient is greater than 0 (there is a positive correlation).
+
+$$H_{0}: r =0$$
+$$H_{1}: r > 0$$
+
+Pearson r correlation test between unemployment & exchange rates:
+```{r Correlation Test 1, message=TRUE, warning=FALSE}
+cor.test(x = data_ts$Unemployment, y = data_ts$Exchange, method = "pearson", alternative = "greater")
+```
+
+Pearson r correlation test between unemployment & interest rates:
+```{r Correlation Test 2, message=TRUE, warning=FALSE}
+cor.test(x = data_ts$Unemployment, y = data_ts$Interest, method = "pearson", alternative = "greater")
+```
+
+Pearson r correlation test between exchange & interest rates:
+```{r Correlation Test 3, message=TRUE, warning=FALSE}
+cor.test(x = data_ts$Exchange, y = data_ts$Interest, method = "pearson", alternative = "greater")
+```
+
+All the pairwise correlation tests of the unemployment, interest and exchange rate data reject the null hypothesis that their correlation coefficients are equal to zero (p-values are less than $\alpha = 5\%$.). This means that the datasets are positively correlated with each other in a significant level. The strongest correlation is the correlation between unemployment and exchange rates: its coefficient is 81.81% which is an indicator of a very strong correlation. The correlation between unemployment and interest rates are not as strong as the former, because their correlation coefficient is 51.04%. Interest and exchange rates have a correlation coefficient of 57.79%, which signifies a stronger correlation than the correlation between unemployment and interest rates, but a weaker correlation than the correlation between unemployment and exchange rates.
+
+The summary of the correlation tests:
+
+```{r Correlation Matrix, fig.align="center"}
+ggcorrplot(corr = cor(data_ts),
+           hc.order = TRUE,
+           outline.col = "white",
+           type = "upper",lab = TRUE,
+           title = "Correlation Matrix",
+           colors = c("darkred","white","darkgreen"),
+           legend.title = "Correlation",
+           ggtheme = theme_void)
+```
+
+The pairwise scatter plots of the rates can be seen below:
+
+```{r Scatter Plots, fig.align="center", fig.width=10, message=FALSE, warning=FALSE}
+par(mfrow=c(1,3))
+plot(x = data$Dollar,y = data$Unemp,
+     main = "Unemployment Rate vs. USD Exchange Rate",
+     xlab = "USD Exchange Rate (TRY)", ylab = "Unemployment Rate (%)",
+     sub = "Correlation: 81.81%", col="darkblue")
+plot(x = data$Deposit,y = data$Unemp,
+     main = "Unemployment Rate vs. Interest Rate",
+     xlab = "Interest Rate (%)", ylab = "Unemployment Rate (%)",
+     sub = "Correlation: 51.04%", col="darkgreen")
+plot(x = data$Dollar,y = data$Deposit,
+     main = "Interest Rate vs. USD Exchange Rate",
+     xlab = "USD Exchange Rate (TRY)", ylab = "Interest Rate (%)",
+     sub = "Correlation: 57.79%", col = "darkred")
+```
+
+# Linear Regression Analysis
+
+Linear regression modelling can be used to support the above statements. Since the unemployment depends on month (because of the cyclical pattern), the model should include a month factor as well as the exchange and interest rates.
+
+```{r Linear Regression Model, fig.align="center", warning=FALSE}
+data_ts$Month <- xts(x = c(rep(1:12, 7),1:8), order.by = data$Date, frequency = 12)
+
+fit <- lm(formula = Unemployment ~ Exchange + Interest + as.factor(Month), data = data_ts)
+
+data_ts$Fitted <- xts(x = fitted(fit), order.by = data$Date, frequency = 12)
+summary(fit)
+```
+
+The overall multiple linear regression model has a p-value of $2.2 \times 10^{-16}$, which is a very strong evidence against the null hypothesis that this model is insignificant. The adjusted R-squared value is 0.7653, which indicates that 76.53% of the variation in the output variables are explained by the input variables. Of course, the model could have been better (Adjusted R-squared value could have been greater.), but when we consider the fact that only month, interest and exchange rate values are used; it is actually an adequate value.
+
+When the variables are examined individually, it can be concluded that the exchange rates describe the activity of unemployment along with some months (especially April, May, June) very well. However, interest rate variable has a p-value of 0.471, which is too great to reject the null hypothesis that the coefficient of interest rate in the model is 0.
+
+The distributions of the residuals in this model can help us see the model in a different perspective:
+
+```{r Check Residuals, fig.align="center", fig.width=10, warning=FALSE}
+checkresiduals(fit)
+```
+
+First of all, the residuals tend to distribute almost like a normal distribution which is something that acceptable models share in common. Nevertheless, one thing that should be noted is that the residuals are correlated with each other, which means this model is not perfect because the residuals are not distributed like white noise and the model should be improved in some way. The result of the _Breusch-Godfrey_ test for serial correlation with a very small p-value of $7.839 \times 10^{-11}$ implies that the null hypothesis of _no_ correlation in the residuals is rejected.
+
+Still, the graph of the unemployment rate and the fitted values vs. time is plotted below:
+
+```{r Unemployment and Fitted vs. Time Graph, fig.align="center", fig.width=10, message=FALSE, warning=FALSE}
+plot(x = data_ts[,c("Unemployment","Fitted")], lty = 1:2,
+     main = "Unemployment and Its Fitted Model vs. Time",
+     legend.loc = "topleft", ylim = c(8,15), minor.ticks = "months", 
+     grid.ticks.on = "quarters", grid.ticks.lty = "dotted", 
+     col = c("black", "goldenrod"))
+```
+
+The fitted values explain the unemployment except between July 2017 and July 2019 quite accurately. For the years 2017-2019, something else might have affected the unemployment rates. Similar to the correlation tests, in the regression model the least correlated factor for the unemployment is the interest rate. The exchange rates explain the unemployment rate in a great degree.
+
+# Conclusion
+
+In this homework, the correlation between unemployment, interest, and USD exchange rates are examined. According to the results of the correlation tests, there seems to be a high correlation between these three types of rates. Further, a linear regression model is tried to be fitted to the unemployment data using the other two rates. Of course, unemployment is affected by many other factors that are beyond this homework's scope, so the model cannot be expected to be flawless.
+
+In spite of the lack of true economic analysis, the regression model was able to explain some parts of the unemployment, which was in fact surprising. Both the Pearson r correlation tests and the linear regression revealed that the correlation between the USD exchange rates and the unemployment is much greater than the correlation between the interest rates and the unemployment. 
