@@ -11,7 +11,9 @@ In this homework, three different data measures of interest are obtained and the
 
 All the R code written for the following plots is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework2.R) (.R file).\
 The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw2.Rmd) (.Rmd file).\
-The data obtained from the CBRT Electronic Delivery System is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/) (.csv file).
+The data obtained from the CBRT Electronic Delivery System is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/hw2data.csv) (.csv file).
+(In order to run the R code without any problems, the data should be in the same directory with the code.)
+
 # Introduction
 
 In the Principles of Economics (EC 101/102) courses, it was stated that the society faces a short-run trade-off between _inflation_ and _unemployment_. This is explained in three steps:
@@ -138,7 +140,8 @@ ggplot(data = data_stacked,mapping = aes(x = Year,y = values)) +
        x = "Years", "Rate (TRY/%)",
        y = "Rate (TRY/%)",
        fill = "Rate Type") +
-  scale_y_continuous(minor_breaks = seq(0,25,by = 1))
+  scale_y_continuous(minor_breaks = seq(0,25,by = 1)) +
+  theme_minimal()
 ```
 
 The boxplots support the claim that both unemployment, interest and exchange rates have an increasing trend between the scope of the data. The boxplots of the USD exchange rates and the unemployment rates almost have the same slope and the size, which backs the hypothesis that these two data sets are correlated with each other. For the interest rates, it can be said that the rates show a similar pattern until 2018 and after that year they drift off course by increasing way too much in 2018.
