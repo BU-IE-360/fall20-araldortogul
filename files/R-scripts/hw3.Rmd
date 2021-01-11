@@ -1,0 +1,158 @@
+---
+title: 'Homework 3: Forecasting Using Linear Regression'
+author: "Aral Dörtoğul"
+date: "1/9/2021"
+output:
+  html_document:
+    code_folding: hide
+    theme: yeti
+  pdf_document: default
+---
+
+In this homework, the data of the number of newly established firms (total) in Turkey is fitted using linear regression. In order to fit the data in a reasonable linear regression model, different meaningful data series and other components such as trend are selected as factors affecting the number of newly established firms. Then, the next month's data is forecasted using this fitted linear regression model.
+
+All the R code written for the following plots is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework3.R) (.R file).\
+The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw3.Rmd) (.Rmd file).\
+The data obtained from the CBRT Electronic Delivery System is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/hw3data.csv) (.csv file).
+
+# Introduction
+
+The total number of firms established in a period of time can be influenced by various economic factors. In this exercise, the monthly data of the total number of firms established in Turkey from January 2013 to November 2020 is going to be modeled using interest rates for commercial loans, because people often get commercial loans when they want to establish a new firm, and the interest rates for that loan type is usually checked before getting loans. The other possible economic factors will be analyzed and included later.
+
+# Setting Up Linear Regression Model
+
+The total number of firms established in Turkey with respect to time can be plotted as follows:
+
+```{r Data Manipulation, fig.align='center', fig.width=9, message=FALSE, warning=FALSE}
+library(ggplot2)    # for plotting
+library(forecast)   # forecasting library
+library(xts)        # extended time series library
+
+data <- read.csv(file = "hw3data.csv")
+data$Date <- as.yearmon(data$Date)
+time_series <- xts(x = data[-1], order.by = data$Date, frequency = 12)
+
+plot(time_series$Firms / 1000,
+     main = "Total Number of Firms Established in Turkey vs. Time",
+     ylab = "Total Number of Firms Established (x1000)",
+     xlab = "Time",
+     yaxis.right = FALSE,
+     minor.ticks = "quarters",
+     grid.ticks.on = "quarters",
+     grid.ticks.lty = 3)
+```
+
+First of all, the data of the number of the established firms show an overall positive trend. The data climbs up starting from approximately four thousand to ten thousand with some white noise. So, a trend component should be included in the model.
+
+In the middle of 2016, there is a sudden drop. In the summer of 2016, there was a Turkish coup d'état attempt (*Turkish: 15 Temmuz darbe girişimi*). This political conflict may have caused people to establish less firms for a couple of months. Because of this, the coup attempt should be included in the model using a logical dummy variable.
+
+In addition to these, a great drop can also be seen in the first half of 2020. The first confirmed COVID-19 case was seen on March 2020 in Turkey and the pandemic quickly spread across the whole country. The quarantine period may have caused this immense drop. Therefore, a variable for COVID-19 puarantine period is also crucial for our model.
+
+Moreover, January data is almost always high, and July data is almost always low. This means that there is some kind of seasonality in our data, and it should be included in our model using a month variable as factor.
+
+Last but not least, the deviation tends to be increasing as years pass. This can be a problem while modeling and the data should be modified in a way that the change in deviation is minimized. In order to do that, the natural logarithm of the data can be used instead.
+```{r Linear Regression Model, fig.align='center', fig.width=9}
+data$Firms <- log(data$Firms)
+data$month <- rep(1:12, 8)
+
+data$coup <- rep(0,96)
+data$coup[43:45] <- rep(1,3)
+
+data$covid <- rep(0,96)
+data$covid[88:89] <- c(1,1)
+
+data$trend <- 1:96
+
+time_series <- xts(x = data[-1], order.by = data$Date, frequency = 12)
+model <- lm(formula = Firms ~ trend + CommercialLoan + as.factor(month) + coup + covid, data = time_series)
+summary(model)
+checkresiduals(model)
+```
+
+According to our current model, the trend component, seasonality and interest rates for commercial loans are significant factors. Also, the dummy variables for the coup attempt and the quarantine period for COVID-19 are also satisfying variables for our model. Although adjusted R-squared (0.82) is not that low and the mean of residuals are almost 0, the problem with this model is that residuals are distributed in an autocorrelated fashion. They need to be distributed independently. This initial model needs to be improved by adding or subtracting variables.
+
+# Adding New Variables
+
+## Industrial Production Index
+
+In Central Bank of the Republic of Turkey's (CBRT) database, industrial production index can be obtained under the tab "Production Statistics". IPI is basically an economic indicator that measures the real production output of manufacturing, mining, and utilities such as technology. This might be beneficial for our model.
+
+```{r IPI vs Residuals, fig.align='center', fig.width=9}
+plot(x = data$IPI[1:95], y = model$residuals[1:95], col = "darkred",
+     main = "Residuals vs. Industrial Production Index",
+     xlab = "Industrial Production Index (IPI)",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+abline(h = 0.1, lty = 3, col = "blue")
+abline(h = -0.1, lty = 3, col = "blue")
+```
+
+When the scatter plot of residuals and IPI is drawn, it appears that the residuals are distributed around the mean zero and the points are not scattered all around the plot. Because of this correlation, IPI will be included in the model.
+
+## USD/TRY Exchange Rates
+
+Exchange rates are an important economic factor affecting several other economic factors in daily life. If we plot residuals vs. USD/TRY exchange rates:
+
+```{r Exchange Rates vs Residuals, fig.align='center', fig.width=9}
+plot(x = data$USD[1:95], y = model$residuals[1:95], col = "darkgreen",
+     main = "Residuals vs. USD Exchange Rates",
+     xlab = "USD Exchange Rates (TRY)",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+abline(h = 0.1, lty = 3, col = "blue")
+abline(h = -0.1, lty = 3, col = "blue")
+```
+
+The scatter plot reveals that although the residuals are near 0 for low exchange rate values, the same thing cannot be observed for high exchange rate values. Hence, USD exchange rates won't be included in the model.
+
+# Updated Linear Regression Model
+
+Our model now includes IPI in addition to the previous variables:
+
+```{r Updated Linear Regression Model, fig.align='center', fig.width=9}
+model <- lm(formula = Firms ~ trend + CommercialLoan + IPI + as.factor(month) + coup + covid, data = time_series)
+summary(model)
+checkresiduals(model)
+```
+
+After the inclusion of industrial production index (IPI), the model's adjusted R-squared value increased from 0.82 to 0.88, which means that IPI is a strong factor when forecasting the number of firms established. However, the model is not perfect yet. There is still great evidence against the hypothesis that the residuals are not autocorrelated. This needs to be fixed.
+
+# Final Linear Regression Model
+
+In order to fix the residual autocorrelation, the lagged values of the residuals can be included in the model. If we add the lag 1 of the residuals:
+
+```{r Final Linear Regression Model, fig.align='center', fig.width=9}
+data$residual_lag1 <- c(0, model$residuals)
+
+time_series <- xts(x = data[-1], order.by = data$Date, frequency = 12)
+
+model <- lm(formula = Firms ~ trend + CommercialLoan + IPI + residual_lag1 + as.factor(month) + coup + covid, data = time_series)
+summary(model)
+checkresiduals(model)
+```
+
+With the addition of the lagged values of the residuals, the autocorrelation problem is fixed. This model has an adjusted R-squared value of 0.9168, which means that it is a trustworthy model for predicting the number of firms established in Turkey in a month. Also, the p-value obtained with the *Breusch-Godfrey* test for serial correlation is not small enough to reject the null hypothesis that there is no serial correlation.
+
+# Conclusion
+
+If we plot the real and predicted values of the number of firms established:
+```{r Final Plot, fig.align='center', fig.width=9}
+final <- xts(x = data.frame(exp(data$Firms[1:96]),exp(predict(model, time_series))), order.by = data$Date[1:96], frequency = 12)
+colnames(final) <- c("Real", "Predicted")
+plot(final,
+     legend.loc = "topleft",
+     main = "Total Number of Firms Established in Turkey vs. Time",
+     minor.ticks = "quarters",
+     grid.ticks.on = "quarters",
+     yaxis.right = FALSE, col = c("black","goldenrod"),
+     grid.ticks.lty = 3)
+```
+The predicted values and the real numbers are so close to each other. The December 2020 is predicted as:
+
+```{r Predicted Value, fig.align='center', fig.width=9}
+final$Predicted[96]
+```
+
+It is very probable that the real december value is going to be very close to **8160.673**.
+
+There are probably countless factors determining the number of firms established in a period of time. Still, with only the current variables, a decent model can be constructed. The final model can explain the ups and downs of the data in a significant level.
