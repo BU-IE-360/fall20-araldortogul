@@ -9,3 +9,7 @@
 ## Homework 2 (December 11)
 
 [Here](files/hw2.html) is my correlation study of three different data sets.
+
+## Homework 3 (January 11)
+
+[Here](files/hw2.html) is my forecasting study of the number of firms established in Turkey.
