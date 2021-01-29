@@ -13,3 +13,7 @@
 ## Homework 3 (January 11)
 
 [Here](files/hw3.html) is my forecasting study of the number of firms established in Turkey.
+
+## Homework 4 (January 29)
+
+[Here](files/hw4.html) is my forecasting study of the electricity consumption rates in Turkey.

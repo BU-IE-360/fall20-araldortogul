@@ -1,0 +1,133 @@
+---
+title: "Homework 4"
+author: "Aral Dörtoğul"
+date: "1/28/2021"
+output:
+  html_document:
+    code_folding: hide
+    theme: yeti
+---
+
+In this homework, electricity consumption in Turkey is modeled using autoregressive and moving average components. In order to build a model; first, stationarity of the data is examined and the data is modified to be more stationary and then the ARIMA models are built.
+
+All the R code written for the following plots is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework4.R) (.R file).\
+The R markdown written for this html document including the code chunks is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw4.Rmd) (.Rmd file).\
+The data obtained from the CBRT Electronic Delivery System is [here](https://bu-ie-360.github.io/fall20-araldortogul/files/hw4data.csv) (.csv file).
+
+# Introduction
+
+Electricity consumption rate in Turkey is an important data that is often forecasted by energy companies, distributors etc. In order to design a model and make predictions about the future electricity consumption, the data needs to be stationary.
+
+The hourly data from 1 January 2017 to 8 January 2021 is retrieved from [EPİAŞ]() and the data is manipulated so that the data can be handled as the daily average electricity consumption rate:
+```{r Data Manipulation, message=FALSE, warning=FALSE}
+library(xts)
+library(lubridate)
+library(forecast)
+library(tseries)
+library(urca)
+data <- read.csv(file = "hw4data.csv")
+data$Date <- paste0(data$Date," ", data$Hour)
+#data$Date <- as.POSIXlt(x = data$Date, format = "%d.%m.%Y %H:%M")
+data$Consumption..MWh. <- as.numeric(gsub(pattern = ",", replacement = "", x = data$Consumption..MWh.))
+
+daily_consumption <- 0
+date <- as.Date(as.Date("2017-01-01"):as.Date("2021-01-08"))
+
+for (i in 0:(length(data$Consumption..MWh.)/24 - 1)) {
+  daily_consumption[i+1] <- mean(data$Consumption..MWh.[(24*i - 23):(24*i)])
+}
+
+daily_data <- data.frame(date, daily_consumption[1:1469])
+colnames(daily_data) <- c("Date", "Consumption")
+data_ts <- xts(x = daily_data$Consumption, order.by = daily_data$Date, frequency = 7)
+d_ts <- ts(daily_data$Consumption, start = as.Date("2017-01-01"), end = as.Date("2021-01-08"), frequency = 7)
+```
+
+The daily average electricity consumption data is as follows:
+```{r Daily Average Electricity Graph, fig.align='center', fig.width=10}
+plot(data_ts,main = "Daily Average Electricity Consumption Rate in Turkey vs. Time",
+     ylab = "Electricity Consumption (MWh)",
+     xlab = "Time",lwd = 0.75, col ="darkblue")
+```
+
+Electricity consumption in Turkey shows unstationary behavior. Although the variance is not changing that much in years, the mean is not constant. It rises and falls in some time periods.
+
+In order to build autoregressive/moving average models, the data needs to be transformed to a more stationary form. This is because stationarity is assumed when linear regression models are made.
+
+The rule of thumb for the data to be stationary is that its mean and various should not change over time. There are several things that can be done in behalf of transforming a data into a stationary one. For instance, power or log transformations can be used to alter changing variance. The data can be disposed of trend with decomposition techniques.
+
+# Stationarity
+```{r Autocorrelation, fig.align='center', fig.width=10}
+tsdisplay(data_ts,
+          main = "Electricity Consumption Rate in Turkey",
+          xlab = "Electricity Cponsumption Rate (MWh)")
+```
+
+There is a peak in every 7th lag of ACF, this means that the data is showing similar behavior every week. So, we can make the inference that the data has a weekly seasonality. To make the data stationary, the data is going to be decomposed with a seasonality frequency of 7. For this data set, **additive** decomposition is prefered because the variance is not increasing over time.
+
+```{r Decomposition,fig.align='center', fig.width=10}
+ts_decomposed <- decompose(x = d_ts,type = "additive")
+plot(ts_decomposed)
+plot(ts_decomposed$seasonal[1:7], type = "o",main = "Seasonality for One Week", ylab = "Electricity Consumption Rate (MWh)", xlab = "Week Days")
+```
+
+After decomposing the data from trend and seasonality parameters (1 corresponds to Sunday and 6 to Saturday), the random remainder part is left for us. Tha random part has an almost constant mean around 0 and the variance seems to be non-changing. Because of this, we can say that we have a more stsationary time series that we can put into modeling.
+
+# ARIMA Modeling and Prediction
+
+The random part generated with decomposition is going to be used for ARIMA modeling. In order to find the best ARIMA model, _auto.arima()_ function is going to be used.
+```{r ARIMA}
+random <- ts_decomposed$random
+arima(random, order=c(0,0,1))
+arima(random, order=c(1,0,0), seasonal = c(0,1,0))
+model <- auto.arima(random)
+model
+```
+
+According to the result, the best fitting ARIMA model (the model with the lowest AIC statistic) has moving average with the last two residuals and  seasonal autoregressive and moving average components with lags 1. Also, the model used seasonal difference with lag 1. With this model, we can predict the next 14 days by forecasting the random values and then adding the last 14 days of seasonality and trend data to the fitted values:
+```{r}
+prediction <- predict(model, n.ahead = 14)
+isNA <- is.na(ts_decomposed$trend)
+lasttrends <- ts_decomposed$trend[!isNA]
+lasttrends <- lasttrends[(length(lasttrends)-13):length(lasttrends)]
+lastseasonality <- ts_decomposed$seasonal[(length(lasttrends)-13):length(lasttrends)]
+final <- prediction$pred + lasttrends + lastseasonality
+nexttwoweeks <- as.Date(as.Date("2021-01-09"):as.Date("2021-01-22"))
+
+final <- xts(x = data.frame(prediction$pred + lasttrends + lastseasonality, daily_consumption[1470:1483]), order.by = nexttwoweeks, frequency = 7)
+colnames(final) <- c("Prediction", "Real Values")
+
+print(final)
+plot(final, main = "Electricity Consumption Rate in Turkey vs. Time", legend.loc = "topleft", ylab = "Electricity Consumption Rate (MWh)")
+```
+
+# Conclusion
+
+With the above operations, an electricity consumption forecasting model is achieved. According to the above graph, the predicted values seems to be shifted by 1 day, maybe due to the coefficients of the ARIMA model. Still, the model explains the ups and downs quite nicely. The model can be improved by improving the stationarity of the original data more by doing other manipulations.
+
+The daily bias and the daily percentage error is below:
+
+```{r}
+error = final$`Real Values` - final$Prediction
+dperror <- abs(error) / final$`Real Values` * 100
+e <- xts(x = data.frame(dperror), order.by = nexttwoweeks, frequency = 7)
+colnames(e) <- "Daily % Error"
+print(e)
+```
+
+Daily percentage error is at most 14%. It would be better if it was lower but still, the model explains the electricity consumption rate decently, it is not the worst model.
+
+
+```{r}
+error = final$`Real Values` - final$Prediction
+n=length(final$`Real Values`)
+  
+mean=mean(final$`Real Values`)
+sd=sd(final$`Real Values`)
+bias = sum(error)/sum(final$`Real Values`)
+mape = sum(abs(error/final$`Real Values`))/length(final$`Real Values`)
+mad = sum(abs(error))/length(final$`Real Values`)
+wmape = mad/mean
+print(data.frame(BIAS = bias,MAPE =  mape, MAD = mad,WMAPE = wmape))
+```
+First of all, bias is very low, which means that the predicted values are not constantly predicting higher or lower.  The error statistics are close to 7%, which is acceptable. The predicted values are close to the real ones. 
