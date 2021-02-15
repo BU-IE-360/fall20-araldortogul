@@ -1,0 +1,34 @@
+---
+title: 'Homework 5: Stepwise Regression in Forecasting'
+author: "Aral Dörtoğul"
+date: "2/13/2021"
+output:
+  html_document:
+    code_folding: hide
+    theme: yeti
+---
+
+In this homework, a stepwise regression model is built to forecast the sales of a person.
+
+* The R markdown written for this html document including the code chunks is [here][rmd] (.Rmd file).
+* All the R code written for this homework is [here][script] (.R file).
+* The data used in this homework is [here][data] (.csv file).
+
+# Introduction
+
+
+```{r}
+library(data.table)
+library(knitr)
+library(rmarkdown)
+data <- fread(file = "sales.txt")
+paged_table(x = data, )
+```
+
+
+
+
+<!-- Links -->
+[script]: https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework5.R "R Script that contaimns all the code chunks in this homework"
+[rmd]: https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw5.Rmd "R Markdown file of this homework"
+[data]: https://bu-ie-360.github.io/fall20-araldortogul/files/hw5data.csv "Data used in this homework"

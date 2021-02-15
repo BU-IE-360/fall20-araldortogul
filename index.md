@@ -17,3 +17,13 @@
 ## Homework 4 (January 29)
 
 [Here](files/hw4.html) is my forecasting study of the electricity consumption rates in Turkey.
+
+## Homework 5 (February 18)
+
+[Here](files/hw5.html) is my stepwise regression study for a sample data of the sales of a person.
+
+***
+
+## Group Project (February 15)
+
+[Here](files/IE360_group12_project_report.html) is Group 12's project report.
