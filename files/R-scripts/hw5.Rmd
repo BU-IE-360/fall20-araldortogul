@@ -4,31 +4,163 @@ author: "Aral Dörtoğul"
 date: "2/13/2021"
 output:
   html_document:
-    code_folding: hide
     theme: yeti
+    highlight: tango
+    fig.width: 10
+
+references:
+- id: stepwise
+  title: "Stepwise Regression"
+  author:
+    family: Hayes
+    given: Adam
+  URL: 'https://en.wikipedia.org/w/index.php?title=Stepwise_regression&oldid=949614867'
+  type: article
+  issued:
+    year: 2021
+    month: 2
+    day: 2
+  accessed:
+    year: 2021
+    month: 2
+    day: 16
 ---
+<!-- Justify text -->
+<style> body {text-align: justify;} </style>
 
 In this homework, a stepwise regression model is built to forecast the sales of a person.
 
 * The R markdown written for this html document including the code chunks is [here][rmd] (.Rmd file).
-* All the R code written for this homework is [here][script] (.R file).
 * The data used in this homework is [here][data] (.csv file).
+
+```{r Setup, message=FALSE, include=FALSE}
+library(data.table) # an extension of "data.frame"
+library(GGally)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60),
+               tidy = TRUE,
+               warning = FALSE,
+               message = FALSE,
+               echo = TRUE,
+               fig.width = 10,
+               fig.align ='center')
+```
 
 # Introduction
 
+"Stepwise regression is the step-by-step iterative construction of a regression model that involves the selection of independent variables to be used in a final model. It involves adding or removing potential explanatory variables in succession and testing for statistical significance after each iteration." [@stepwise]
 
-```{r}
-library(data.table)
-library(knitr)
-library(rmarkdown)
-data <- fread(file = "sales.txt")
-paged_table(x = data, )
+The data provided includes selling aptitude test score (APT), age (in years), anxiety test score (ANX), experience (in years), and high school GPA of a person in addition to sales data. All the data is below:
+
+```{r Data}
+data <- fread(file = "sales.txt") # Data is read from file
+rmarkdown::paged_table(data) # Print data
+```
+
+A multiple linear regression model will be built for the sales data and the regressors will be chosen using stepwise regression method. In order to build a regression model of the sales using stepwise approach, the first things that need to be checked are the correlation matrix and the scatter plots of the given data.
+
+```{r Correlation Matrix and Scatter Plots, fig.height=6}
+ggpairs(data, title = "Correlation Matrix and Scatter Plots")
+```
+
+According to the correlation matrix, sales data is correlated with age, aptitude test score (APT) and GPA in a significant level, they are expected to be in the regression model. Anxiety test score (ANX) is not significantly correlated, so it is not expected to be in the final linear regression model.
+
+# Stepwise Regression by Hand
+
+The stepwise regression algorith starts with a simple, base model which includes only the variable with the highest absolute correlation value, which is the age. The initial model is as follows:
+
+```{r Base Model}
+currentmodel <- lm(formula = SALES ~ AGE, data = data) # Initial (based) model
+summary(currentmodel) # Print summary  of the model
+```
+
+The base model is a significantly valid model because the p-value is less than the critical value 0.05. Adjusted R-squared is 0.6133, which will improve by the addition of the new variables. The regressor `AGE`'s coefficient ($\beta_1 = 6.858$) is statistically significant with a very low p-value.
+
+Four new models will be built from this model by the addition of a variable that is not included in the current model (APT, ANX, EXP, GPA). The new models will be compared with the current model by using the `anova(currentmodel, newmodel)` function and the significance of the new variables will be decided using the F-test. After, the current model will be updated with the model with the lowest significant p-value (highest F-statistic). 
+
+```{r Analysis of Variance 1}
+anova(currentmodel, lm(formula = SALES ~ AGE + APT, data = data))
+anova(currentmodel, lm(formula = SALES ~ AGE + ANX, data = data))
+anova(currentmodel, lm(formula = SALES ~ AGE + EXP, data = data))
+anova(currentmodel, lm(formula = SALES ~ AGE + GPA, data = data))
 ```
 
 
+According to the F-tests above, the model `SALES ~ AGE + APT` has the lowest p-value which is also statistically significant. Therefore, the current model is updated with this model.
 
+```{r Model 2}
+currentmodel <- lm(formula = SALES ~ AGE + APT, data = data) # Update currentmodel
+summary(currentmodel) # Print summary  of the model
+```
+
+The last model is a significantly valid model because the p-value ($9.404 \times 10^{-14}$) is less than the critical value 0.05. Adjusted R-squared is higher than the base model, which means our model estimates sales of a person better. Both the regressor `AGE` and `APT`’s coefficients are statistically significant with a very low p-value.
+
+Now, a reduced model will be built by removing one of the variables which is already in the last model (except the last one added in the previous step). The new model will be compared with the current model by using the `anova(currentmodel, reducedmodel)` function and the significance of the removed variable will be decided using the F-test.
+
+If the p-value of this test is larger than the significance level (0.05), the current model will be updated by removing this variable. Otherwise, that variable won't be removed.
+```{r Analysis of Variance 2}
+anova(currentmodel,  lm(formula = SALES ~ APT, data = data))
+```
+
+Since the p-value of this test is smaller than the significance level 0.05, the variable `AGE` won't be removed from the model. The model stays the same for now.
+
+Next, the other variables will be tested and the most significant variable will be added to the model by using the same procedure:
+
+
+```{r Analysis of Variance 3}
+anova(currentmodel, lm(formula = SALES ~ AGE + APT + ANX, data = data))
+anova(currentmodel, lm(formula = SALES ~ AGE + APT + EXP, data = data))
+anova(currentmodel, lm(formula = SALES ~ AGE + APT + GPA, data = data))
+```
+
+None of the other variables produce statistically significant models when compared to the last model. Because of this, the last model becomes the final model and the stepwise regression comes to an end.
+
+The final model:
+
+```{r Summary of the Final Model}
+summary(currentmodel) # Print summary  of the model
+```
+
+# Stepwise Regression Using `step()` Function 
+
+A model can be chosen by AIC in a stepwise algorithm using `step()`:
+
+```{r Step Function}
+model2 <- step(object = lm(formula = SALES ~ ., data = data), direction = "both")
+summary(model2) # Print summary  of the model
+```
+
+The model chosen with the `step()` is the same model built by hand. This indicates that the stepwise regression in the previous section is done correctly.
+
+# Estimates of the Coefficients of the Final Model
+
+* $\hat \beta_{\mathrm{Intercept}}$ = `r currentmodel$coefficients["(Intercept)"]`
+
+* $\hat \beta_{\mathrm{Age}}$ = `r currentmodel$coefficients["AGE"]`
+
+* $\hat \beta_{\mathrm{APT}}$ =`r currentmodel$coefficients["APT"]`
+
+* Residual Variance $\left(\sigma_{\mathrm{residual}}^2 \right)$: `r sd(currentmodel$residuals)^2`
+
+# Testing GPA's Effect on Sales
+
+We can test GPA's effect on sales by adding it to the final regression model. The null and alternative hypotheses are below:
+
+$$H_0: \beta_{GPA} = 0$$
+$$H_1: \beta_{GPA} \neq 0$$
+Where $\beta_{GPA}$ is the coefficient of `GPA` variable in the linear regression model. The linear regression model including GPA is:
+
+```{r Final Model Plus GPA}
+model_gpa <- lm(formula = SALES ~ AGE + APT + GPA, data = data)
+summary(model_gpa) # Print summary  of the model
+```
+
+According to the summary, the p-value for GPA's coefficient is 0.661, which is greater than the critical value 0.1. Therefore, the null hypothesis that the coefficient of `GPA` equals 0 **cannot  be rejected**.
+
+**GPA does not have a statistically significant effect on the sales of a person.**
+
+# References
+<!-- References will be inserted here automatically. -->
 
 <!-- Links -->
-[script]: https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/homework5.R "R Script that contaimns all the code chunks in this homework"
 [rmd]: https://bu-ie-360.github.io/fall20-araldortogul/files/R-scripts/hw5.Rmd "R Markdown file of this homework"
-[data]: https://bu-ie-360.github.io/fall20-araldortogul/files/hw5data.csv "Data used in this homework"
+[data]: https://bu-ie-360.github.io/fall20-araldortogul/files/sales.txt "Data used in this homework"
